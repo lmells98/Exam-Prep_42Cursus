@@ -7,16 +7,19 @@ char	*get_next_line(int fd);
 int	main(void)
 {
 	int	fd;
-	int	i;
+	char	*i;
 
 	fd = open("./test.txt", O_RDONLY);
 	if (fd > 0)
 	{
-		i = 0;
-		while (i < 4)
+		int	j;
+		j = 1;
+		i = get_next_line(fd);
+		while (i)
 		{
-			printf("%d : %s", i + 1, get_next_line(fd));
-			i++;
+			printf("%d : %s", j, i);
+			j++;
+			i = get_next_line(fd);
 		}
 	}
 	close(fd);
