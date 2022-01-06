@@ -1,6 +1,6 @@
 #include <unistd.h>
 
-static short	check_first(char c, char *str, int pos)
+static short	check_first(char *str, int c, int pos)
 {
 	int	i;
 
@@ -29,7 +29,7 @@ int	main(int ac, char **av)
 			{
 				if (av[1][i] == av[2][j])
 				{
-					if (check_first(av[1][i], av[1], i))
+					if (check_first(av[1], av[1][i], i))
 					{
 						write(1, &av[1][i], 1);
 						break ;
