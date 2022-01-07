@@ -10,75 +10,72 @@ static void	ft_free(char **ptr)
 
 static int	print_string(char *str)
 {
-	int	i;
+	int	bytes;
 
-	i = 0;
-	while (str[i] != '\0')
-	{
-		write(1, &str[i], 1);
-		i++;
-	}
-	return (i);
+	bytes = 0;
+	while (str[bytes] != '\0')
+		write(1, &str[bytes++], 1);
+	return (bytes);
 }
 
-static unsigned int	get_u_len_base(unsigned int nb, int base)
+static int	get_digits_base(unsigned int nb, int neg, int base)
 {
-	unsigned int	len;
+	int	digits;
 
-	len = 0;
+	digits = 0;
+	if (nb == 0)
+		digits++;
 	while (nb != 0)
 	{
-		len += 1;
+		digits++;
 		nb /= base;
 	}
-	if (nb == 0 && len == 0)
-		len += 1;
-	return (len);
+	return (neg + digits);
 }
 
-static char	*u_itoa(unsigned int nb, int nb_len, int sign)
+static char	*u_itoa(unsigned int nb, int neg, int size)
 {
 	int		i;
-	char	*array;
+	char	*arr;
 
-	array = (char *)malloc((nb_len + 1) * sizeof(char));
-	if (!array)
+	arr = (char *)malloc((size + 1) * sizeof(char));
+	if (!arr)
 		return (NULL);
 	i = 0;
-	while (i < nb_len)
+	if (neg)
 	{
-		array[i] = '0';
+		arr[i] = '-';
 		i++;
 	}
-	if (sign)
-		array[0] = '-';
+	while (i < size)
+		arr[i++] = '0';
+	arr[i] = '\0';
 	i -= 1;
 	while (nb != 0)
 	{
-		array[i] = (nb % 10) + '0';
-		i--;
+		arr[i--] = (nb % 10) + '0';
 		nb /= 10;
 	}
-	array[nb_len] = '\0';
-	return (array);
+	return (arr);
 }
 
 static int	print_decimal(int nb)
 {
-	int				bytes;
-	int				sign;
-	char			*decimal;
-	unsigned int	nb_len;
-	
+	int		neg;
+	int		size;
+	int		bytes;
+	char	*decimal;
+
+	decimal = NULL;
+	neg = 0;
 	bytes = 0;
-	sign = 0;
-	nb_len = get_u_len_base(nb, 10);
 	if (nb < 0)
 	{
-		sign = 1;
-		nb_len += 1;
+		nb *= -1;
+		neg = 1;
 	}
-	decimal = u_itoa(nb, nb_len, sign);
+	size = get_digits_base(nb, neg, 10);
+	decimal = u_itoa(nb, neg, size);
 	bytes += print_string(decimal);
 	ft_free(&decimal);
 	return (bytes);
@@ -86,50 +83,42 @@ static int	print_decimal(int nb)
 
 static int	print_hex(unsigned int nb)
 {
-	int				bytes;
-	char			*output;
-	unsigned int	hex_len;
+	int		size;
+	int		bytes;
+	char	*hex_str;
 
+	hex_str = NULL;
+	size = get_digits_base(nb, 0, 16);
+	hex_str = (char *)malloc((size + 1) * sizeof(char));
+	if (!hex_str)
+		hex_str = NULL;
 	bytes = 0;
-	hex_len = get_u_len_base(nb, 16);
-	output = (char *)malloc((hex_len + 1) * sizeof(char));
-	if (!output)
-		return (0);
-	while ((unsigned)bytes < hex_len)
-	{
-		output[bytes] = '0';
-		bytes++;
-	}
+	while (bytes < size)
+		hex_str[bytes++] = '0';
+	hex_str[bytes] = '\0';
 	bytes -= 1;
 	while (nb != 0)
 	{
-		output[bytes] = "0123456789abcdef"[nb % 16];
-		bytes--;
+		hex_str[bytes--] = "0123456789abcdef"[nb % 16];
 		nb /= 16;
 	}
-	output[hex_len] = '\0';
-	bytes = print_string(output);
-	ft_free(&output);
+	bytes = print_string(hex_str);
+	ft_free(&hex_str);
 	return (bytes);
 }
 
-static int	do_conversion(const char *format, va_list argp)
+static int	do_conversion(va_list argp, const char *format)
 {
 	int	bytes;
 
-	format++;
 	bytes = 0;
+	format++;
 	if (*format == 's')
 		bytes += print_string(va_arg(argp, char *));
 	else if (*format == 'd')
 		bytes += print_decimal(va_arg(argp, int));
 	else if (*format == 'x')
 		bytes += print_hex(va_arg(argp, unsigned int));
-	else if (*format == '%')
-	{
-		write(1, "%", 1);
-		bytes += 1;
-	}
 	return (bytes);
 }
 
@@ -145,7 +134,7 @@ int	ft_printf(const char *format, ...)
 		{
 			if (*format == '%')
 			{
-				bytes += do_conversion(format, argp);
+				bytes += do_conversion(argp, format);
 				format++;
 			}
 			else
